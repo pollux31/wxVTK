@@ -1,0 +1,24 @@
+Configuration:
+
+1) install DeVIDE from the Google projects page http://code.google.com/p/devide/
+
+DeVIDE is distributed as part of the DRE, or DeVIDE Runtime Environment. 
+The DRE is in fact a Python distribution that includes cmake, swig, Python, numpy, matplotlib, wxPython, gdcm, VTK, ITK and DeVIDE itself.
+With the DRE, you can easily develop your own Python applications and also C++ extension modules, as the C++ SDK is included
+
+2) Configure eclipse and PyDev 
+Create a file dre.cmd in the installation DeVIDE directory
+Copy in the drecmd the following content:
+@echo off
+"%~dp0\python\python.exe" "%~dp0\dre.py" %1 %2 %3 %4 %5 %6 %7 %8 %9
+
+ 
+Edit the PyDev Preferences to configure a new Python interpreter.
+Select for Python the file dre.cmd
+
+For the Project choose this new Python interpreter.
+
+
+Content:
+
+- Test1 : a Window wih a donut

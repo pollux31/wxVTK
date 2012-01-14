@@ -1,12 +1,12 @@
 import vtk
 # widget to combine VTK and wxPython
-from vtk.wx.wxVTKRenderWindowInteractor import wxVTKRenderWindowInteractor
+# from vtk.wx.wxVTKRenderWindowInteractor import wxVTKRenderWindowInteractor
 from vtk.wx.wxVTKRenderWindow import wxVTKRenderWindow
 import wx
 
 class VTKFrame(wx.Frame):
     def __init__(self, parent, id):
-        # create wx.Frame andwxVTKRenderWindowInteractor to put in it
+        # create wx.Frame and wxVTKRenderWindowInteractor to put in it
         wx.Frame.__init__(self, parent, id, "DRE wxVTK demo", size=(400,400))
         
         # create a menu
@@ -53,7 +53,7 @@ class VTKFrame(wx.Frame):
         self.ren.RemoveAllViewProps() 
         del self.ren 
         self.rwi.GetRenderWindow().Finalize() 
-        self.rwi.SetRenderWindow(None) 
+        #self.rwi.SetRenderWindow(None) 
         del self.rwi 
         self.Destroy()
 
