@@ -40,17 +40,30 @@ class MyObject(object):
     def Sphere(self, x, y, z):
         ''' create a cylinder and return the actor '''
         obj = vtk.vtkSphereSource()
+        obj.SetThetaResolution(16)
+        obj.SetPhiResolution(16)
         self.MapObject(obj)
-        self.actor.GetProperty().SetColor(0.3, 0.5, 0.8)
-        self.actor.GetProperty().SetSpecular(0.3)
+        prop = vtk.vtkProperty()
+        prop.SetColor(0.3, 0.5, 0.8)
+        prop.SetAmbientColor(0.5, 0.5, 0)
+        prop.SetDiffuseColor(0, 0.8, 0.5)
+        prop.SetSpecular(0.5)
+        self.actor.SetProperty(prop)
         self.actor.SetPosition(x, y, z)
 
     def Cone(self, x, y, z):
         ''' create a cylinder and return the actor '''
         obj = vtk.vtkConeSource()
         self.MapObject(obj)
-        self.actor.GetProperty().SetColor(0.3, 0.8, 0.5)
-        self.actor.GetProperty().SetSpecular(0.5)
+#        self.actor.GetProperty().SetColor(0.3, 0.8, 0.5)
+#        self.actor.GetProperty().SetOpacity(0.35)
+#        self.actor.GetProperty().SetSpecular(0.5)
+        prop = vtk.vtkProperty()
+        prop.SetColor(0.3, 0.8, 0.5)
+        prop.SetAmbientColor(1, 1, 0)
+        prop.SetOpacity(0.35)
+        prop.SetSpecular(0.5)
+        self.actor.SetProperty(prop)
         self.actor.SetPosition(x, y, z)
         
     def SetOrientation(self, x, y, z):
