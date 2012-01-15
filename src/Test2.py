@@ -13,6 +13,12 @@ import vtk
 from vtk.wx.wxVTKRenderWindow import wxVTKRenderWindow
 import wx
 
+class World(object):
+    def __init__(self, rendWind):
+        self.rendWin = rendWind
+        
+    def AddCyl(self):
+
 class VTKFrame(wx.Frame):
     def __init__(self, parent, ident):
         # create wx.Frame and wxVTKRenderWindowInteractor to put in it
