@@ -1,3 +1,12 @@
+'''
+Created on 15 janv. 2012
+
+@author: Pollux31
+
+Simple test to try to implement VTK in a wxPython Window
+'''
+
+
 import vtk
 # widget to combine VTK and wxPython
 # from vtk.wx.wxVTKRenderWindowInteractor import wxVTKRenderWindowInteractor
@@ -43,10 +52,10 @@ class VTKFrame(wx.Frame):
         self.SetSizer(sizer)
         self.Layout()
         
-        # sequence of init is diferent
+        # sequence of init is different
         self.rwi.Enable(1)
         
-        # add created renderer to te RWI's buit-in rendererwindow
+        # add created renderer to the RWI's buit-in renderer window
         self.rwi.GetRenderWindow().AddRenderer(self.ren)
         
     def onQuit(self, envent):
