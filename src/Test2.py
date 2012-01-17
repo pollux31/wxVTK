@@ -3,7 +3,7 @@ Created on 15 janv. 2012
 
 @author: Pollux31
 
-Test to put 4 Renderer in the same Window
+Test to put 4 Renderers in the same Window
 '''
 
 
@@ -12,12 +12,6 @@ import vtk
 # from vtk.wx.wxVTKRenderWindowInteractor import wxVTKRenderWindowInteractor
 from vtk.wx.wxVTKRenderWindow import wxVTKRenderWindow
 import wx
-
-class World(object):
-    def __init__(self, rendWind):
-        self.rendWin = rendWind
-        
-    def AddCyl(self):
 
 class VTKFrame(wx.Frame):
     def __init__(self, parent, ident):

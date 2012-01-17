@@ -3,7 +3,7 @@ Created on 15 janv. 2012
 
 @author: Pollux31
 
-Manage Several object in a window
+Manage Several objects in a window
 '''
 
 
