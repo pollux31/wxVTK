@@ -22,3 +22,5 @@ For the Project choose this new Python interpreter.
 Content:
 
 - Test1 : a Window wih a donut
+- Test2 : 4 Renderers in the same Window
+- Test3 : Manage Several objects in a window
