@@ -4,6 +4,8 @@ Created on 17 janv. 2012
 @author: pollux31
 
 Changing the interaction with vtk 
+
+Left double click to select an object
 '''
 
 
@@ -82,6 +84,11 @@ class MyObject(object):
 class VTKFrame(wx.Frame):
     def __init__(self, parent, id):
         self._select = False
+        self._ren = None        # The Renderer
+        self._rwi = None        # The reneder Windows
+        
+        self._action = ""       # No action         
+        
         
         # create wx.Frame and wxVTKRenderWindowInteractor to put in it
         wx.Frame.__init__(self, parent, id, "DRE wxVTK demo", size=(400,400))
@@ -96,10 +103,10 @@ class VTKFrame(wx.Frame):
         menuBar.Append(menuFile, "&File")
         
         # add an Action Menu
-        menuAction = wx.Menu()
-        itemSelect = menuAction.AppendCheckItem(-1, "&Select\tS", "Select an object")
-        self.Bind(wx.EVT_MENU, self.OnSelect, itemSelect)
-        menuBar.Append(menuAction, "&File")
+#        menuAction = wx.Menu()
+#        itemSelect = menuAction.AppendCheckItem(-1, "&Select\tS", "Select an object")
+#        self.Bind(wx.EVT_MENU, self.OnSelect, itemSelect)
+#        menuBar.Append(menuAction, "&File")
         
         self.SetMenuBar(menuBar)
         self.statusBar = self.CreateStatusBar()
@@ -107,19 +114,32 @@ class VTKFrame(wx.Frame):
         self.statusBar.SetStatusWidths([-4, -1])
         
         # the render is a 3D Scene
-        ren = vtk.vtkRenderer()
-        ren.SetBackground(0.2, 0.5, 0.7)
+        self._ren = vtk.vtkRenderer()
+        self._ren.SetBackground(0.2, 0.5, 0.7)
 
         # create the world
-        self.CreateWorld(ren)
+        self.CreateWorld(self._ren)
 
         #make sure the RWI sizes to fill the frame
-        rwi = wxVTKRenderWindow(self, -1)
-        rwi.GetRenderWindow().AddRenderer(ren)
+        self._rwi = wxVTKRenderWindow(self, -1)
+        self._rwi.GetRenderWindow().AddRenderer(self._ren)
         
         # trap mouse events
-        rwi.Bind(wx.EVT_LEFT_DOWN, self.OnButtonDown)
+        self._rwi.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self._rwi.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
+        self._rwi.Bind(wx.EVT_LEFT_DCLICK, self.OnSelect)
+        self._rwi.Bind(wx.EVT_MOTION, self.OnMotion)
         
+        # store the Picker
+        self._Picker = vtk.vtkCellPicker()
+        self._PickedActor = None
+        self._PickedProperty = None
+        self._SelectProperty = vtk.vtkProperty()
+        self._SelectProperty.SetColor(1,0,0)
+        
+    def OnQuit(self, envent):
+        self.Close()
+
     def CreateWorld(self, render):
         ''' create the scene '''
         actObj1 = MyObject(render, 'C', 0, 0, 0)
@@ -127,23 +147,15 @@ class VTKFrame(wx.Frame):
         MyObject(render, 'O', 1, 0, 0)
         MyObject(render, 'S', 1.3, 0, 0)
     
-    def OnSelect(self, event):
-        if self._select:
-            self._select = False
-            self.statusBar.SetStatusText("",0)
-        else:
-            self._select = True
-            self.statusBar.SetStatusText("Selection activated", 0)
+#    def OnSelect(self, event):
+#        if self._select:
+#            self._select = False
+#            self.statusBar.SetStatusText("",0)
+#        else:
+#            self._select = True
+#            self.statusBar.SetStatusText("Selection activated", 0)
         
 # -------------- MOUSE management ------------------------------------
-    def OnButtonDown(self, event):
-        if event.LeftDown():
-            self.OnLeftDown(event)
-        elif event.RightDown():
-            self.OnRightDown(event)
-        elif event.MiddleDown():
-            self.OnMiddleDown(event)
-            
     def OnRightDown(self, event):
         event.Skip()
         
@@ -151,13 +163,55 @@ class VTKFrame(wx.Frame):
         event.Skip()
         
     def OnLeftDown(self, event):
-        if not self._select:
-            event.Skip()  # let the VTKRenderderWindow process the event
-        else:
-            pass
+        if event.ShiftDown():
+            self.action = "shift"
+        if event.ControlDown():
+            self.action = "ctrl"
+        event.Skip()
+    
+    def OnLeftUp(self, event):
+        self.action = ""
+        event.Skip()    
 
-    def OnQuit(self, envent):
-        self.Close()
+    def OnMotion(self, event):
+        if self._PickedActor != None and self.action != "":
+            pass
+        else:
+            event.Skip()
+        
+
+# --------------- Object selection ------------------------------    
+    def OnSelect(self, event):
+        x = event.GetX()
+        y = event.GetY()
+
+        renderer = self._ren
+        picker = self._Picker
+        
+        windowX, windowY = self._rwi.GetSize()
+        picker.Pick(x,(windowY - y - 1),0.0,renderer)
+        actor = picker.GetActor()
+
+        # remove old selection if exist
+        if (self._PickedActor != None and self._PickedProperty != None):
+            self._PickedActor.SetProperty(self._PickedProperty)
+            # release hold of the property
+            self._PickedProperty.UnRegister(self._PickedProperty)
+            self._PickedProperty = None
+
+        # and now, it there something selected ?
+        self._PickedActor = actor
+        if (actor != None):
+            self._PickedProperty = self._PickedActor.GetProperty()
+            # hold onto the property
+            self._PickedProperty.Register(self._PickedProperty)
+            self._PickedActor.SetProperty(self._SelectProperty)
+
+        # Update the window
+        self._rwi.Render()
+
+
+
 
 # start the wx loop
 app = wx.PySimpleApp()
