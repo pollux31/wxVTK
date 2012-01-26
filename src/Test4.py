@@ -5,7 +5,14 @@ Created on 17 janv. 2012
 
 Changing the interaction with vtk 
 
+Vie can be rotate, zoom or scroll by using the standard keys :
+    rotate : drag with left button (left drag)
+    zoom : drag with right button (right drag)
+    scroll : shift + left drag
+
 Left double click to select an object
+
+With an object selected, move it with shift + Left drag
 '''
 
 
@@ -82,16 +89,15 @@ class MyObject(object):
 # Frame management
 # ---------------------------------------------------------------------------
 class VTKFrame(wx.Frame):
-    def __init__(self, parent, id):
-        self._select = False
-        self._ren = None        # The Renderer
-        self._rwi = None        # The reneder Windows
+    def __init__(self, parent, ident):
+        self.ren = None        # The Renderer
+        self.rwi = None        # The reneder Windows
         
-        self._action = ""       # No action         
+        self.action = ""       # No action         
         
         
         # create wx.Frame and wxVTKRenderWindowInteractor to put in it
-        wx.Frame.__init__(self, parent, id, "DRE wxVTK demo", size=(400,400))
+        wx.Frame.__init__(self, parent, ident, "DRE wxVTK demo", size=(400,400))
         
         # create a menuBar
         menuBar = wx.MenuBar()
@@ -114,28 +120,28 @@ class VTKFrame(wx.Frame):
         self.statusBar.SetStatusWidths([-4, -1])
         
         # the render is a 3D Scene
-        self._ren = vtk.vtkRenderer()
-        self._ren.SetBackground(0.2, 0.5, 0.7)
+        self.ren = vtk.vtkRenderer()
+        self.ren.SetBackground(0.2, 0.5, 0.7)
 
         # create the world
-        self.CreateWorld(self._ren)
+        self.CreateWorld(self.ren)
 
         #make sure the RWI sizes to fill the frame
-        self._rwi = wxVTKRenderWindow(self, -1)
-        self._rwi.GetRenderWindow().AddRenderer(self._ren)
+        self.rwi = wxVTKRenderWindow(self, -1)
+        self.rwi.GetRenderWindow().AddRenderer(self.ren)
         
         # trap mouse events
-        self._rwi.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
-        self._rwi.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
-        self._rwi.Bind(wx.EVT_LEFT_DCLICK, self.OnSelect)
-        self._rwi.Bind(wx.EVT_MOTION, self.OnMotion)
+        self.rwi.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self.rwi.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
+        self.rwi.Bind(wx.EVT_LEFT_DCLICK, self.OnSelect)
+        self.rwi.Bind(wx.EVT_MOTION, self.OnMotion)
         
         # store the Picker
-        self._Picker = vtk.vtkCellPicker()
-        self._PickedActor = None
-        self._PickedProperty = None
-        self._SelectProperty = vtk.vtkProperty()
-        self._SelectProperty.SetColor(1,0,0)
+        self.picker = vtk.vtkCellPicker()
+        self.pickedActor = None
+        self.pickedProperty = None
+        self.selectProperty = vtk.vtkProperty()
+        self.selectProperty.SetColor(1,0,0)
         
     def OnQuit(self, envent):
         self.Close()
@@ -163,10 +169,13 @@ class VTKFrame(wx.Frame):
         event.Skip()
         
     def OnLeftDown(self, event):
+        self.clickX = event.GetX()
+        self.clickY = event.GetY()
+
         if event.ShiftDown():
             self.action = "shift"
         if event.ControlDown():
-            self.action = "ctrl"
+            self.action = "ctrlw"
         event.Skip()
     
     def OnLeftUp(self, event):
@@ -174,41 +183,62 @@ class VTKFrame(wx.Frame):
         event.Skip()    
 
     def OnMotion(self, event):
-        if self._PickedActor != None and self.action != "":
-            pass
+        if self.pickedActor != None and self.action != "":
+            if self.action == "shift":
+
+                # get the mouse position
+                x, y = event.GetPosition()
+                
+                # get the object position
+                (actX, actY, actZ) = self.pickedActor.GetPosition()
+                
+                # convert it to screen coordinate
+                self.ren.SetWorldPoint(actX, actY, actZ, 1.0)
+                self.ren.WorldToDisplay()
+                fx,fy,fz = self.ren.GetDisplayPoint()
+                
+                # add the mouse move
+                self.ren.SetDisplayPoint(fx+x-self.clickX,
+                                         fy+self.clickY-y,
+                                         fz)
+                self.clickX = x
+                self.clickY = y
+                # change it to world reference
+                self.ren.DisplayToWorld()
+                (actX, actY, actZ, actW) = self.ren.GetWorldPoint()
+                self.pickedActor.SetPosition(actX, actY, actZ)
+                self.rwi.Render()
         else:
             event.Skip()
         
 
 # --------------- Object selection ------------------------------    
     def OnSelect(self, event):
-        x = event.GetX()
-        y = event.GetY()
+        X = event.GetX()
+        Y = event.GetY()
 
-        renderer = self._ren
-        picker = self._Picker
+        renderer = self.ren
+        picker = self.picker
+
         
-        windowX, windowY = self._rwi.GetSize()
-        picker.Pick(x,(windowY - y - 1),0.0,renderer)
+        windowX, windowY = self.rwi.GetSize()
+        picker.Pick(X,(windowY - Y - 1),0.0,renderer)
         actor = picker.GetActor()
 
         # remove old selection if exist
-        if (self._PickedActor != None and self._PickedProperty != None):
-            self._PickedActor.SetProperty(self._PickedProperty)
-            # release hold of the property
-            self._PickedProperty.UnRegister(self._PickedProperty)
-            self._PickedProperty = None
+        if (self.pickedActor != None and self.pickedProperty != None):
+            self.pickedActor.SetProperty(self.pickedProperty)
+            self.pickedProperty = None
 
         # and now, it there something selected ?
-        self._PickedActor = actor
+        self.pickedActor = actor
         if (actor != None):
-            self._PickedProperty = self._PickedActor.GetProperty()
-            # hold onto the property
-            self._PickedProperty.Register(self._PickedProperty)
-            self._PickedActor.SetProperty(self._SelectProperty)
+            self.pickedProperty = self.pickedActor.GetProperty()
+            self.pickedActor.SetProperty(self.selectProperty)
+            #self.pickedPos = actor.GetPosition()
 
         # Update the window
-        self._rwi.Render()
+        self.rwi.Render()
 
 
 
