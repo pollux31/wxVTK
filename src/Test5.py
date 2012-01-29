@@ -1,18 +1,9 @@
 '''
-Created on 17 janv. 2012
+Created on 29 janv. 2012
 
 @author: pollux31
 
-Changing the interaction with vtk 
-
-View can be rotate, zoom or scroll by using the standard keys :
-    rotate : drag with left button (left drag)
-    zoom : drag with right button (right drag)
-    scroll : shift + left drag
-
-Left double click to select an object
-
-With an object selected, move it with shift + Left drag
+Same as Test 4 with a polyline 
 '''
 
 
@@ -24,6 +15,57 @@ from vtk.wx.wxVTKRenderWindow import wxVTKRenderWindow
 # ---------------------------------------------------------------------------
 # objects creation
 # ---------------------------------------------------------------------------
+class Branch(object):
+    def __init__(self, ren):
+        self.ren = ren
+        
+        # Generate the polyline for the spline.
+        self.points = vtk.vtkPoints()
+        self.lines = vtk.vtkCellArray()
+        self.Data = vtk.vtkPolyData()
+        self.Tubes = vtk.vtkTubeFilter()
+        self.Tubes.SetInput(self.Data)
+        self.Tubes.SetNumberOfSides(8)
+        self.Tubes.SetRadius(.1)
+        
+        self.mapper = vtk.vtkPolyDataMapper()
+        self.mapper.SetInput(self.Tubes.GetOutput())
+        self.actor = vtk.vtkActor()
+        self.actor.SetMapper(self.mapper)
+        self.ren.AddActor(self.actor)
+        
+
+    def SetPos(self, startX, startY, startZ, endX, endY, endZ):
+        ''' Provide the start & end coordinate of the branch '''
+        self.points.InsertPoint(0, startX, startY, startZ)
+        self.points.InsertPoint(1, endX, endY, endZ)
+        self.lines.InsertNextCell(2)
+        self.lines.InsertCellPoint(0)
+        self.lines.InsertCellPoint(1)
+        self.Data.SetPoints(self.points)
+        self.Data.SetLines(self.lines)
+        
+    def InsertPoint(self, idx, x, y, z):
+        ''' insert a new point just before the idx position in the list ''' 
+        nbPoint = self.points.GetNumberOfPoints()
+        self.points.SetNumberOfPoints(nbPoint+1)
+        for i in xrange(nbPoint, idx, -1):
+            (px, py, pz) = self.points.GetPoint(i-1)
+            self.points.InsertPoint(i, px, py, pz)
+        self.points.InsertPoint(idx, x, y, z)
+        self.lines.Reset()
+        self.lines.InsertNextCell(nbPoint+1)
+        for i in xrange(0, nbPoint+1):
+            self.lines.InsertCellPoint(i)
+
+    def MovePoint(self, idx, x, y, z):
+        ''' move the point number idx to the new position '''
+        self.points.InsertPoint(idx, x, y, z)
+
+
+        
+
+
 class MyObject(object):
     ''' Manage objects '''
     def __init__(self, ren, obj, x, y, z):
@@ -152,14 +194,14 @@ class VTKFrame(wx.Frame):
         actObj1.SetOrientation(0, 0, 90)
         MyObject(render, 'O', 1, 0, 0)
         MyObject(render, 'S', 1.3, 0, 0)
+        
+        branch = Branch(render)
+        branch.SetPos(0, 0, 0, 3, 3, 3)
+
+        branch.InsertPoint(1, 2, 0, 1)
     
-#    def OnSelect(self, event):
-#        if self._select:
-#            self._select = False
-#            self.statusBar.SetStatusText("",0)
-#        else:
-#            self._select = True
-#            self.statusBar.SetStatusText("Selection activated", 0)
+        branch.MovePoint(2, 0, 4, 1)
+
         
 # -------------- MOUSE management ------------------------------------
     def OnRightDown(self, event):
